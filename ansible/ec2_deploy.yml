@@ -5,16 +5,16 @@ connection: local
 tasks:
   - name: Launch EC2 Instance
   ec2_instance: 
-    instance_type: t2.micro
-    image_id: ami-051f8a213df8bc089
-    region: us-east-1
-    key_name: test
-    vpc_subnet_id: subnet-00d0d44cdf925df2c
-    count: 1
-    network:
-      assign_public_id: yes
-    wait: yes
-    aws_access_key: "{{ acces_key}}"
-    aws_secret_key: "{{ secret_key}}"
-    security_token: "{{ session_token}}"
+      instance_type: t2.micro
+      image_id: ami-051f8a213df8bc089
+      region: us-east-1
+      key_name: test
+      vpc_subnet_id: subnet-00d0d44cdf925df2c
+      count: 1
+      network:
+        assign_public_id: yes
+      wait: yes
+      aws_access_key: "{{ acces_key}}"
+      aws_secret_key: "{{ secret_key}}"
+      security_token: "{{ session_token}}"
 
