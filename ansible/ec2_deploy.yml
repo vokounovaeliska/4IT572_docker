@@ -5,15 +5,80 @@
   tasks:
     - name: Launch EC2 Instance
       ec2_instance: 
-        instance_type: t2.micro
+        instance_type: t3.medium
         image_id: ami-051f8a213df8bc089
         region: us-east-1
         key_name: test
         vpc_subnet_id: subnet-00d0d44cdf925df2c
+        tags:
+          name: Eshop 1
         count: 1
+        network:
+          assign_public_id: yes
+        wait: yes
+        security_group: eshop
         network:
           assign_public_ip: yes
         wait: yes
         aws_access_key: "{{ acces_key }}"
         aws_secret_key: "{{ secret_key }}"
         security_token: "{{ session_token }}"
+      register: ec2_instance_result
+
+    - name: Add instance host to group
+      add_host:
+        hostname: "{{ item.public_ip_address }}"
+        groupname: launched
+      loop: "{{ ec2_instance_result.instances }}"
+
+    - name: Wait for SSH connection
+      delegate_to: "{{ item.public_dns_name }}"
+      wait_for_connection:
+        delay: 30
+        timeout: 300
+      loop: "{{ ec2_instance_result.instances }}"
+
+- name: Configure EC2 Instances
+  hosts: launched
+  connection: ssh
+  become: yes
+
+  tasks:
+    - name: Install Git and Docker
+      yum:
+        name:
+          - git
+          - docker
+        state: latest
+        update_cache: yes
+    - service:
+        name: docker
+        state: started
+        enabled: yes
+    - name: Set proper rights to Docker service
+      shell: usermod -a -G docker ec2-user
+
+    - name: Fetch eshop from git
+      git:
+        repo: 'https://github.com/vokounovaeliska/4IT572_docker.git'
+        dest: ./app
+
+    - name: Build Eshop Docker image
+      docker_image:
+        build:
+          path: ./app
+        name: eshop
+        tag: latest
+        source: build
+    - name: Run Eshop docker
+      docker_container:
+        name: eshop
+        image: eshop
+        state: started
+        ports:
+          - "80:3000"
+
+    - name: Wait for eshop to run
+      wait_for:
+        port: 
+          80
